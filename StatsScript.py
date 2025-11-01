@@ -4,11 +4,11 @@ import numpy as np
 from scipy import stats
 
 # ---------------- CONFIG ----------------
-FILE_PATH = r"C:\Users\angel\Documents\coding python\epigeneticexcel.csv"
+FILE_PATH = r"filepath"
 ALPHA = 0.05
 REMOVE_OUTLIERS = True
 P_MIN = 1e-6
-# ----------------------------------------
+
 
 def fmt_p(p):
     if p is None or np.isnan(p):
@@ -16,9 +16,9 @@ def fmt_p(p):
     return f"<{P_MIN:.6f}" if p < P_MIN else f"{p:.6f}"
 
 
-# ============================================================
-# 1️⃣ Load dataset
-# ============================================================
+
+# Load dataset
+
 def load_dataset(path):
     ext = os.path.splitext(path)[1].lower()
     if ext in (".xlsx", ".xls"):
@@ -29,7 +29,7 @@ def load_dataset(path):
         df = pd.read_csv(path)
 
     df = df.replace(["", " ", "NA", "N/A", "nan", "NaN"], np.nan)
-    print(f"\n📂 Loaded dataset: {len(df)} rows × {len(df.columns)} columns\n")
+    print(f"\nLoaded dataset: {len(df)} rows × {len(df.columns)} columns\n")
 
     summary = pd.DataFrame({
         "Column": df.columns,
@@ -41,37 +41,37 @@ def load_dataset(path):
     return df
 
 
-# ============================================================
-# 2️⃣ Detect columns
-# ============================================================
+
+# Detect columns
+
 def detect_columns(df):
     num_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
     num_cols = [c for c in num_cols if not any(x in c.lower() for x in ["id", "sample"])]
     cat_cols = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c]) and 2 <= df[c].nunique() <= 10]
-    print(f"📊 Numeric columns: {num_cols}")
-    print(f"📁 Categorical columns (potential groups): {cat_cols}\n")
+    print(f"Numeric columns: {num_cols}")
+    print(f"Categorical columns (potential groups): {cat_cols}\n")
     return num_cols, cat_cols
 
 
-# ============================================================
-# 3️⃣ Pick the grouping column
-# ============================================================
+
+# Pick the grouping column
+
 def choose_grouping_column(cat_cols):
     if not cat_cols:
         return None
     # Prefer Diagnosis-like columns if available
     for name in cat_cols:
         if any(k in name.lower() for k in ["diagnosis", "group", "condition", "status", "class"]):
-            print(f"✅ Using '{name}' as grouping column.\n")
+            print(f"Using '{name}' as grouping column.\n")
             return name
     # Otherwise, pick the first categorical column
-    print(f"✅ Using '{cat_cols[0]}' as grouping column.\n")
+    print(f"Using '{cat_cols[0]}' as grouping column.\n")
     return cat_cols[0]
 
 
-# ============================================================
-# 4️⃣ Outlier detection
-# ============================================================
+
+# Outlier detection
+
 def detect_and_remove_outliers(df, col, group_col):
     info, cleaned_parts = {}, []
     grouped = df[[group_col, col]].dropna().groupby(group_col)
@@ -93,9 +93,9 @@ def detect_and_remove_outliers(df, col, group_col):
     return cleaned, info
 
 
-# ============================================================
-# 5️⃣ Normality test
-# ============================================================
+
+# Normality test
+
 def shapiro_per_group(df, col, group_col):
     results = {}
     for g, sub in df[[group_col, col]].dropna().groupby(group_col):
@@ -108,9 +108,9 @@ def shapiro_per_group(df, col, group_col):
     return results
 
 
-# ============================================================
-# 6️⃣ Statistical testing
-# ============================================================
+
+# Statistical testing
+
 def run_tests(df, num_cols, group_col):
     results = []
     for feature in num_cols:
@@ -124,7 +124,7 @@ def run_tests(df, num_cols, group_col):
         for g, i in outliers.items():
             print(f"  {g}: n_outliers={i['n_outliers']}, values={i['values']}, "
                   f"bounds=({i['bounds'][0]:.3f}..{i['bounds'][1]:.3f})")
-        print("✅ Outliers removed.")
+        print("Outliers removed.")
 
         normality = shapiro_per_group(cleaned, feature, group_col)
         print("\nShapiro–Wilk test results:")
@@ -172,9 +172,9 @@ def run_tests(df, num_cols, group_col):
     return pd.DataFrame(results)
 
 
-# ============================================================
+
 # MAIN
-# ============================================================
+
 if __name__ == "__main__":
     df = load_dataset(FILE_PATH)
     num_cols, cat_cols = detect_columns(df)
